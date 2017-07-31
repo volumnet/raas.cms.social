@@ -180,7 +180,7 @@ class Task extends SOME
                     'profile_id' => (int)$this->profile_id,
                 ));
             }
-            $post->iid = (int)$postData['id'];
+            $post->iid = trim($postData['id']);
             $post->url = trim($postData['url']);
             $post->post_date = date('Y-n-d H:i:s');
             $post->name = Text::cuttext($postData['name'], 128, '...');

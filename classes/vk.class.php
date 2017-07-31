@@ -190,13 +190,7 @@ class Vk extends Network
                 throw new Exception('ERROR_PUBLISH');
             }
             $response = $response['response'];
-            if (is_numeric($response) && ($response > 0)) {
-                return true;
-            } else {
-                throw new Exception('ERROR_PUBLISH');
-            }
         } catch (VKException $e) {
-            throw new Exception('ERROR_PUBLISH');
         }
         return true;
     }
@@ -230,45 +224,6 @@ class Vk extends Network
             $profile->avatar = trim($user['photo_50']);
             $profile->access_token = $IN['access_token'];
             $profile->expiration_date = $IN['expires_in'] ? date('Y-m-d H:i:s', time() + $IN['expires_in']) : '0000-00-00';
-            $profile->commit();
-            return $profile;
-        } catch (VKException $e) {
-            throw new Exception('ERROR_ADD_PROFILE');
-        }
-    }
-
-
-    public static function authOld(array $IN = array())
-    {
-        try {
-            $connection = self::getConnection();
-            $callback = 'http' . ($_SERVER['HTTPS'] == 'on' ? 's' : '') . '://'
-                      . $_SERVER['HTTP_HOST']
-                      . HTTP::queryString('code=', true, $_SERVER['REQUEST_URI']);
-            $accessToken = $connection->getAccessToken($IN['code'], $callback);
-            if (!$connection->isAuth()) {
-                throw new Exception('ERROR_ADD_PROFILE');
-            }
-            if (!$connection->checkAccessToken($accessToken['access_token'])) {
-                throw new Exception('ERROR_ADD_PROFILE');
-            }
-            $response = $connection->api('users.get', array('fields' => 'nickname,domain,photo_50'));
-            $user = $response['response'][0];
-            $profile = static::getMatchingProfile($user['id']);
-            $profile->urn = trim($user['domain']);
-            $profile->url = trim('https://vk.com/' . $user['domain']);
-            $name = array();
-            foreach (array('first_name', 'nickname', 'last_name') as $key) {
-                if ($user[$key]) {
-                    $name[] = $user[$key];
-                }
-            }
-            if ($name) {
-                $profile->name = implode(' ', $name);
-            }
-            $profile->avatar = trim($user['photo_50']);
-            $profile->access_token = $accessToken['access_token'];
-            $profile->expiration_date = $accessToken['expires_in'] ? date('Y-m-d H:i:s', time() + $accessToken['expires_in']) : '0000-00-00';
             $profile->commit();
             return $profile;
         } catch (VKException $e) {

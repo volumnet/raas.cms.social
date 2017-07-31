@@ -6,6 +6,9 @@ use RAAS\Attachment;
 use Facebook\Facebook as FacebookConnection;
 use Facebook\Exceptions\FacebookSDKException;
 use RAAS\Exception;
+use SOME\Text;
+use \CURLFile;
+use \RAAS\CMS\Page;
 
 class Facebook extends Network
 {
@@ -13,25 +16,146 @@ class Facebook extends Network
 
     public function uploadImage(Attachment $attachment, Task $task)
     {
-        // @todo
+        try {
+            $connection = self::getConnection();
+            if ($task->group->id) {
+                if (self::getImagesCount($task) <= 1) {
+                    $OUT = array(
+                        'id' => '0',
+                        'url' => self::getAttachmentUrl($attachment)
+                    );
+                    return $OUT;
+                }
+                $url = '/' . $task->group->iid . '/photos';
+            } else {
+                $url = '/' . $task->profile->iid . '/photos';
+            }
+            $accessToken = self::getAccessToken($task);
+            $data = array(
+                'source' => $connection->fileToUpload($attachment->file),
+            );
+            if (!$task->group->id || ($task->group->id != 'group')) {
+                $data['published'] = (bool)$task->group->id;
+            }
+            if ($task->group->id && $task->post_as_profile) {
+                $data['no_story'] = true;
+            }
+            $response = $connection->post($url, $data, $accessToken);
+            $response = $response->getGraphNode()->asArray();
+            $id = $response['id'];
+            $OUT = array(
+                'id' => $id
+            );
+
+            $OUT['url'] = self::getImageUrl($response['id'], $accessToken);
+            return $OUT;
+        } catch (FacebookSDKException $e) {
+            // print_r ($e); exit;
+            throw new Exception('ERROR_PUBLISH');
+        }
     }
 
 
     public function uploadDocument(Attachment $attachment, Task $task)
     {
-        // @todo
+        $OUT = array(
+            'id' => '0',
+            'url' => self::getAttachmentUrl($attachment)
+        );
+        return $OUT;
     }
 
 
     public function uploadText(Task $task, $text, array $imagesUploads = array(), array $documentUploads = array(), Post $post = null)
     {
-        // @todo
+        try {
+            $onlyOnePhoto = ($task->group->id && (self::getImagesCount($task) <= 1) && $imagesUploads);
+            $connection = self::getConnection();
+            $accessToken = self::getAccessToken($task);
+            $data = array(
+                'message' => $text,
+            );
+            if ($documentUploads) {
+                $data['message'] .= "\n";
+                foreach ($documentUploads as $documentUpload) {
+                    $data['message'] .= "\n" . $documentUpload->url;
+                }
+            }
+            if ($post->id) {
+                $url = '/' . $post->iid;
+                $response = $connection->post($url, $data, $accessToken);
+                $response = $response->getGraphNode()->asArray();
+                if ($response['success']) {
+                    return array(
+                        'id' => $post->iid,
+                        'url' => $post->url,
+                        'name' => Text::cuttext(preg_replace('/(\\r\\n)|\\n|\\r/i', ' ', $text), 128, '...')
+                    );
+                } else {
+                    throw new Exception('ERROR_PUBLISH');
+                }
+            } else {
+                if ($task->group->id) {
+                    if ($onlyOnePhoto) {
+                        $url = '/' . $task->group->iid . '/photos';
+                        $data['source'] = $connection->fileToUpload($imagesUploads[0]->attachment->file);
+                        if ($task->post_as_profile) {
+                            $data['no_story'] = true;
+                        }
+                    } else {
+                        $url = '/' . $task->group->iid . '/feed';
+                    }
+                } else {
+                    $url = '/' . $task->profile->iid . '/feed';
+                    for ($i = 0; $i < count($imagesUploads); $i++) {
+                        $data['attached_media[' . $i . ']'] = json_encode(array('media_fbid' => $imagesUploads[$i]->iid));
+                    }
+                }
+                $response = $connection->post($url, $data, $accessToken);
+                $response = $response->getGraphNode()->asArray();
+                if ($response) {
+                    $OUT = array();
+                    if ($onlyOnePhoto) {
+                        $upload = $imagesUploads[0];
+                        $upload->iid = trim($response['id']);
+                        $upload->url = self::getImageUrl($response['id'], $accessToken);
+                        $upload->commit();
+                        $OUT['id'] = $response['post_id'];
+                    } else {
+                        $OUT['id'] = $response['id'];
+                    }
+                    $OUT['url'] = 'https://facebook.com/' . $OUT['id'];
+                    $OUT['name'] = Text::cuttext(preg_replace('/(\\r\\n)|\\n|\\r/i', ' ', $text), 128, '...');
+                    return $OUT;
+                } else {
+                    throw new Exception('ERROR_PUBLISH');
+                }
+            }
+        } catch (FacebookSDKException $e) {
+            // print_r ($e); exit;
+            throw new Exception('ERROR_PUBLISH');
+        }
     }
 
 
     public function deletePost(Post $post)
     {
-        // @todo
+        try {
+            $connection = self::getConnection();
+            $task = $post->task;
+            $onlyOnePhoto = ($task->group->id && (self::getImagesCount($task) <= 1) && $post->uploads);
+            $accessToken = self::getAccessToken($task);
+            foreach ($post->uploads as $upload) {
+                if (($upload->upload_type == 'image') && $upload->iid && !preg_match('/_' . preg_quote($upload->iid) . '/i', $post->iid)) {
+                    $response = $connection->delete('/' . $upload->iid, array(), $accessToken);
+                }
+            }
+            $response = $connection->delete('/' . $post->iid, array(), $accessToken);
+            $graphObject = $response->getGraphObject()->asArray();
+        } catch (FacebookSDKException $e) {
+            // print_r ($e); exit;
+        }
+        return true;
     }
 
 
@@ -125,7 +249,14 @@ class Facebook extends Network
         try {
             $connection = self::getConnection();
             $helper = $connection->getRedirectLoginHelper();
-            $permissions = array('public_profile', 'user_posts', 'manage_pages', 'publish_pages');
+            $permissions = array(
+                'public_profile',
+                'user_posts',
+                'manage_pages',
+                'publish_pages',
+                'publish_actions',
+                'user_managed_groups',
+            );
             $url = $helper->getLoginUrl($callback, $permissions);
             return $url;
         } catch (FacebookSDKException $e) {
@@ -152,5 +283,71 @@ class Facebook extends Network
     private static function getAppSecret()
     {
         return Module::i()->registryGet('facebook_app_secret') ?: '';
+    }
+
+
+    private static function getAttachmentUrl(Attachment $attachment)
+    {
+        if ($_SERVER['HTTP_HOST']) {
+            $url = 'http' . ($_SERVER['HTTPS'] == 'on' ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
+        } else {
+            $pages = Page::getSet(array('where' => "NOT pid"));
+            $page = array_shift($pages);
+            $url = $page->domain;
+        }
+        $url .= '/' . $attachment->fileURL;
+        return $url;
+    }
+
+
+    private static function getImagesCount(Task $task)
+    {
+        $c = 0;
+        foreach ($task->images as $image) {
+            $c += $image->max_count;
+        }
+        return $c;
+    }
+
+
+    private static function getImageUrl($id, $accessToken)
+    {
+        try {
+            $connection = self::getConnection();
+            $response = $connection->get('/' . $id . '?fields=images', $accessToken);
+            $response = $response->getGraphNode()->asArray();
+            $response = $response['images'];
+            $width = 0;
+            $imageUrl = '';
+            foreach ($response as $image) {
+                if ($image['width'] > $width) {
+                    $width = $image['width'];
+                    $imageUrl = $image['source'];
+                }
+            }
+            return $imageUrl;
+        } catch (FacebookSDKException $e) {
+            print_r ($e); exit;
+            throw new Exception('ERROR_PUBLISH');
+        }
+    }
+
+
+    private static function getAccessToken(Task $task)
+    {
+        try {
+            $connection = self::getConnection();
+            if ($task->group->id && ($task->group->group_type != 'group') && !$task->post_as_profile) {
+                $response = $connection->get('/' . $task->group->iid . '?fields=access_token', $task->profile->access_token);
+                $response = $response->getGraphNode()->asArray();
+                $accessToken = $response['access_token'];
+            } else {
+                $accessToken = $task->profile->access_token;
+            }
+            return $accessToken;
+        } catch (FacebookSDKException $e) {
+            print_r ($e); exit;
+            throw new Exception('ERROR_PUBLISH');
+        }
     }
 }
