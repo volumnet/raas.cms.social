@@ -47,25 +47,28 @@ class Task extends SOME
 
     public function publishItem(Material $item, Post $post = null)
     {
-        if (!$post) {
-            $posts = Post::getSet(array(
-                'where' => array("task_id = " . (int)$this->id, "material_id = " . (int)$item->id),
-                'orderBy' => "id DESC"
-            ));
-            if ($posts) {
-                $post = array_shift($posts);
+        try {
+            if (!$post) {
+                $posts = Post::getSet(array(
+                    'where' => array("task_id = " . (int)$this->id, "material_id = " . (int)$item->id),
+                    'orderBy' => "id DESC"
+                ));
+                if ($posts) {
+                    $post = array_shift($posts);
+                }
             }
-        }
-        if ($item->pid != $this->material_type_id) {
-            throw new Exception('ERROR_PUBLISH_INVALID_MATERIAL_TYPE');
-        }
-        if ($this->interface->id) {
-            $this->interface->process(array('task' => $this, 'material' => $item));
-        } else {
-            $imagesUploads = $this->getImagesUploads($item, $post);
-            $documentUploads = $this->getDocumentUploads($item, $post);
-            $post = $this->getPost($item, $imagesUploads, $documentUploads, $post);
-            return $post;
+            if ($item->pid != $this->material_type_id) {
+                throw new Exception('ERROR_PUBLISH_INVALID_MATERIAL_TYPE');
+            }
+            if ($this->interface->id) {
+                $this->interface->process(array('task' => $this, 'material' => $item));
+            } else {
+                $imagesUploads = $this->getImagesUploads($item, $post);
+                $documentUploads = $this->getDocumentUploads($item, $post);
+                $post = $this->getPost($item, $imagesUploads, $documentUploads, $post);
+                return $post;
+            }
+        } catch (Exception $e) {
         }
     }
 
@@ -171,7 +174,11 @@ class Task extends SOME
     public function getPost(Material $item, array $imagesUploads, array $documentUploads, Post $post = null)
     {
         $text = $this->getText($item);
-        if ($postData = $this->profile->network->uploadText($this, $text, $imagesUploads, $documentUploads, $post)) {
+        try {
+            $postData = $this->profile->network->uploadText($this, $text, $imagesUploads, $documentUploads, $post);
+        } catch (Exception $e) {
+        }
+        if ($postData) {
             if (!$post) {
                 $post = new Post(array(
                     'task_id' => (int)$this->id,

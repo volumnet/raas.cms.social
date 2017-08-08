@@ -120,4 +120,18 @@ abstract class Network
     abstract public function uploadText(Task $task, $text, array $imagesUploads = array(), array $documentUploads = array(), Post $post = null);
 
     abstract public function deletePost(Post $post);
+
+    protected static function getAttachmentUrl(Attachment $attachment)
+    {
+        $_SERVER['HTTP_HOST'] = 'test.org';
+        if ($_SERVER['HTTP_HOST']) {
+            $url = 'http' . ($_SERVER['HTTPS'] == 'on' ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
+        } else {
+            $pages = Page::getSet(array('where' => "NOT pid"));
+            $page = array_shift($pages);
+            $url = $page->domain;
+        }
+        $url .= '/' . $attachment->fileURL;
+        return $url;
+    }
 }

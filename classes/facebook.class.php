@@ -286,20 +286,6 @@ class Facebook extends Network
     }
 
 
-    private static function getAttachmentUrl(Attachment $attachment)
-    {
-        if ($_SERVER['HTTP_HOST']) {
-            $url = 'http' . ($_SERVER['HTTPS'] == 'on' ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
-        } else {
-            $pages = Page::getSet(array('where' => "NOT pid"));
-            $page = array_shift($pages);
-            $url = $page->domain;
-        }
-        $url .= '/' . $attachment->fileURL;
-        return $url;
-    }
-
-
     private static function getImagesCount(Task $task)
     {
         $c = 0;
@@ -327,7 +313,7 @@ class Facebook extends Network
             }
             return $imageUrl;
         } catch (FacebookSDKException $e) {
-            print_r ($e); exit;
+            // print_r ($e); exit;
             throw new Exception('ERROR_PUBLISH');
         }
     }
@@ -346,7 +332,7 @@ class Facebook extends Network
             }
             return $accessToken;
         } catch (FacebookSDKException $e) {
-            print_r ($e); exit;
+            // print_r ($e); exit;
             throw new Exception('ERROR_PUBLISH');
         }
     }

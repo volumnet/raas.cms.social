@@ -2,6 +2,7 @@
 namespace RAAS\CMS\Social;
 
 use SOME\SOME;
+use RAAS\Exception;
 
 class Post extends SOME
 {
@@ -28,7 +29,11 @@ class Post extends SOME
         foreach ($item->uploads as $upload) {
             Upload::delete($upload);
         }
-        if ($item->task->profile->network->deletePost($item)) {
+        try {
+            $result = $item->task->profile->network->deletePost($item);
+        } catch (Exception $e) {
+        }
+        if ($result) {
             parent::delete($item);
             return true;
         }
