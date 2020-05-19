@@ -1,9 +1,0 @@
-[submodule "include/twitteroauth"]
-	path = include/twitteroauth
-	url = https://github.com/abraham/twitteroauth.git
-[submodule "include/php-graph-sdk"]
-	path = include/php-graph-sdk
-	url = https://github.com/facebook/php-graph-sdk
-[submodule "include/vk"]
-	path = include/vk
-	url = https://github.com/vladkens/VK

@@ -1,0 +1,5 @@
+coverage
+vendor
+components
+composer.lock
+config.php
