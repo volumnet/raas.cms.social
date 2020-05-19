@@ -21,10 +21,6 @@ class Module extends \RAAS\Module
 
     public function autoload($class)
     {
-        require_once $this->includeDir . '/twitteroauth/autoload.php';
-        require_once $this->includeDir . '/php-graph-sdk/src/Facebook/autoload.php';
-        require_once $this->includeDir . '/vk/src/VK/VK.php';
-        require_once $this->includeDir . '/vk/src/VK/VKException.php';
         parent::autoload($class);
     }
 
