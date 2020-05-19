@@ -1,7 +1,7 @@
 {
     "name": "volumnet/raas.cms.social",
     "description": "RAAS.CMS.Social",
-    "version": "4.2.0",
+    "version": "4.2.2",
     "license": "GPL-3.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
