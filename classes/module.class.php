@@ -143,4 +143,20 @@ class Module extends \RAAS\Module
         $Set = Post::getSQLSet($SQL_query, $Pages);
         return array('Set' => $Set, 'Pages' => $Pages, 'sort' => $sort, 'order' => $_order, 'task' => $task);
     }
+
+
+    /**
+     * Возвращает привязку страниц к альбомам
+     * @param  Task   $task [description]
+     * @return array<int $page_id => MarketAlbum>
+     */
+    public function getAlbumsByTask(Task $task)
+    {
+        $temp = MarketAlbum::getSet(array('where' => "task_id = " . (int)$task->id));
+        $Set = array();
+        foreach ($temp as $row) {
+            $Set[$row->page_id] = $row;
+        }
+        return $Set;
+    }
 }

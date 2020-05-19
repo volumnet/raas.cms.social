@@ -53,7 +53,7 @@ class MaterialsTable extends \RAAS\CMS\MaterialsTable
             }
         }
 
-        $this->meta['allValue'] = null;
+        $this->meta['allValue'] = 'ids';
         $this->meta['allContextMenu'] = $this->view->getAllMaterialsContextMenu();
         $this->template = 'cms/multitable.tmp.php';
         $this->emptyString = $this->view->_('NO_NOTES_FOUND');

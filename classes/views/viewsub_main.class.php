@@ -1,9 +1,10 @@
 <?php
 namespace RAAS\CMS\Social;
 
-use \RAAS\Application;
+use RAAS\Application;
 use RAAS\CMS\Material_Type;
 use RAAS\CMS\Material;
+use RAAS\CMS\Page;
 
 class ViewSub_Main extends \RAAS\Abstract_Sub_View
 {
@@ -37,6 +38,17 @@ class ViewSub_Main extends \RAAS\Abstract_Sub_View
     }
 
 
+    public function task_albums(array $IN = array())
+    {
+        $IN['Table'] = new AlbumsTable($IN);
+        $this->assignVars($IN);
+        $this->title = $IN['task']->name . ': ' . $this->_('ALBUMS');
+        $this->path[] = array('name' => $this->_('__NAME'), 'href' => self::i()->url);
+        $this->template = $IN['Table']->template;
+        $this->js[] = $this->publicURL . '/task_albums.js';
+    }
+
+
     public function taskPosts(array $IN = array())
     {
         $IN['Table'] = new PostsTable($IN);
@@ -52,10 +64,21 @@ class ViewSub_Main extends \RAAS\Abstract_Sub_View
         $tasks = Task::getSet();
         $tasksMenu = $postsMenu = array();
         foreach ($tasks as $task) {
-            $tasksMenu[] = array(
+            $taskMenuItem = array(
                 'href' => $this->url . '&action=tasks&id=' . (int)$task->id,
                 'name' => $task->name,
             );
+            if ($task->is_market) {
+                $taskMenuItem['submenu'][] = array(
+                    'href' => $this->url . '&action=tasks_albums&id=' . (int)$task->id,
+                    'name' => $this->_('ALBUMS'),
+                );
+                $taskMenuItem['submenu'][] = array(
+                    'href' => $this->url . '&action=tasks&id=' . (int)$task->id,
+                    'name' => $this->_('PRODUCTS'),
+                );
+            }
+            $tasksMenu[] = $taskMenuItem;
             $postsMenu[] = array(
                 'href' => $this->url . '&action=posts&id=' . (int)$task->id,
                 'name' => $task->name,
@@ -136,6 +159,46 @@ class ViewSub_Main extends \RAAS\Abstract_Sub_View
             'name' => $this->_('PUBLISH'),
             'icon' => 'share'
         );
+        return $arr;
+    }
+
+
+    public function getAlbumContextMenu(Page $page, Album $album = null)
+    {
+        $arr = array();
+        $arr[] = array(
+            'href' => $this->url . '&action=publish_album&id=' . (int)$page->id . '&pid=' . (int)$this->nav['id'],
+            'name' => $this->_('PUBLISH'),
+            'icon' => 'share'
+        );
+        if ($album->id) {
+            $arr[] = array(
+                'href' => $this->url . '&action=delete_album&album_id=' . (int)$album->id,
+                'name' => $this->_('DELETE'),
+                'icon' => 'remove',
+                'onclick' => 'return confirm(\'' . addslashes(htmlspecialchars($this->_('ARE_YOU_SURE_TO_DELETE_THIS_NOTE'))) . '\')'
+            );
+        }
+        return $arr;
+    }
+
+
+    public function getAllAlbumsContextMenu()
+    {
+        $arr = array();
+        $arr[] = array(
+            'href' => $this->url . '&action=publish_album&pid=' . (int)$this->nav['id'],
+            'name' => $this->_('PUBLISH'),
+            'icon' => 'share'
+        );
+        if ($album->id) {
+            $arr[] = array(
+                'href' => $this->url . '&action=delete_album&pid=' . (int)$this->nav['id'],
+                'name' => $this->_('DELETE'),
+                'icon' => 'remove',
+                'onclick' => 'return confirm(\'' . addslashes(htmlspecialchars($this->_('DELETE_MULTIPLE_TEXT'))) . '\')'
+            );
+        }
         return $arr;
     }
 }

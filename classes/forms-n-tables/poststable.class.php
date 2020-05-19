@@ -25,7 +25,7 @@ class PostsTable extends Table
         $defaultParams = array(
             'meta' => array(
                 'allContextMenu' => $view->getAllPostsContextMenu(),
-                'allValue' => null,
+                'allValue' => 'ids',
             ),
             'data-role' => 'multitable',
             'template' => 'cms/multitable.tmp.php',

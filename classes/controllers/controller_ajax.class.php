@@ -1,6 +1,8 @@
 <?php
 namespace RAAS\CMS\Social;
 
+use SOME\Namespaces;
+
 class Controller_Ajax extends Abstract_Controller
 {
     protected static $instance;
@@ -9,6 +11,7 @@ class Controller_Ajax extends Abstract_Controller
     {
         switch ($this->action) {
             case 'groups':
+            case 'categories':
                 $this->{$this->action}();
                 break;
         }
@@ -33,6 +36,31 @@ class Controller_Ajax extends Abstract_Controller
                 )
             )
         );
-        $this->view->show_page($OUT);
+        $this->view->groups($OUT);
+    }
+
+
+    protected function categories()
+    {
+        $profile = new Profile((int)$this->id);
+        if (!($profile->network instanceof Marketable)) {
+            return array();
+        }
+        $temp = $profile->network->getMarketCategories();
+        $cats = array();
+        switch (Namespaces::getClass($profile->networkClass)) {
+            case 'Vk':
+                foreach ($temp as $row) {
+                    $cats[] = array('val' => '', 'text' => '-- ' . $row['name'] . ' --', 'disabled' => true, 'style' => 'font-weight: bold;');
+                    foreach ($row['children'] as $row2) {
+                        $cats[] = array('val' => $row2['id'], 'text' => str_repeat('&nbsp;', 3) . $row2['name']);
+                    }
+                }
+                break;
+            case 'Facebook':
+                break;
+        }
+        $OUT = array('Set' => $cats);
+        $this->view->categories($OUT);
     }
 }

@@ -38,7 +38,7 @@ class Sub_Dev extends \RAAS\Abstract_Sub_Controller
             case 'delete_task':
                 $ids = (array)$_GET['id'];
                 $items = array_map(function ($x) {
-                    return new Task((int)$x);
+                    return Task::spawn((int)$x);
                 }, $ids);
                 $items = array_values($items);
                 StdSub::delete($items, $this->url . '&action=social');
@@ -52,7 +52,7 @@ class Sub_Dev extends \RAAS\Abstract_Sub_Controller
 
     protected function edit_task()
     {
-        $Item = new Task((int)$this->id);
+        $Item = Task::spawn((int)$this->id);
         $materialType = $Item->id ? $Item->materialType : new Material_Type($_GET['pid']);
         $Form = new EditTaskForm(array('materialType' => $materialType, 'Item' => $Item));
         $this->view->edit_task($Form->process());

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS {$DBPREFIX$}{$PACKAGENAME$}_{$MODULENAME$}_tasks (
   group_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Group ID#',
   profile_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Profile ID#',
   post_as_profile TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Publish as profile',
+  is_market TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Is market task',
   description TEXT NULL DEFAULT NULL COMMENT 'Post template',
   interface_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Post interface ID#',
   check_for_update TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Check for updates',
@@ -114,3 +115,56 @@ CREATE TABLE IF NOT EXISTS {$DBPREFIX$}{$PACKAGENAME$}_{$MODULENAME$}_posts (
   KEY (group_id),
   KEY (profile_id)
 ) COMMENT 'Social media materials post log';
+
+
+CREATE TABLE IF NOT EXISTS {$DBPREFIX$}{$PACKAGENAME$}_{$MODULENAME$}_market_tasks (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID#',
+  root_page_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Root page ID#',
+  category_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Category ID#',
+  name_field_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Name field ID#',
+  marker_field_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Marker field ID#',
+  price_field_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Price field ID#',
+  album_name_field_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Album name field ID#',
+  album_image_field_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Image field ID#',
+  
+  PRIMARY KEY (id),
+  KEY (root_page_id),
+  KEY (name_field_id),
+  KEY (marker_field_id),
+  KEY (price_field_id),
+  KEY (album_name_field_id),
+  KEY (album_image_field_id)
+) COMMENT 'Market tasks';
+
+
+CREATE TABLE IF NOT EXISTS {$DBPREFIX$}{$PACKAGENAME$}_{$MODULENAME$}_market_albums (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID#',
+  iid VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Internal ID#',
+  url VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Upload URL',
+  task_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Market task ID#',
+  page_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Page ID#',
+  attachment_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Attachment ID#',
+  image_iid VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Image upload internal ID#',
+  image_url VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Image upload URL',
+  group_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Group ID#',
+  profile_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Profile ID#',
+  post_date DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Post date',
+  name VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Name',
+  
+  PRIMARY KEY (id),
+  KEY (task_id),
+  KEY (page_id),
+  KEY (attachment_id),
+  KEY (group_id),
+  KEY (profile_id)
+) COMMENT 'Market albums log';
+
+
+CREATE TABLE IF NOT EXISTS {$DBPREFIX$}{$PACKAGENAME$}_{$MODULENAME$}_market_items_albums_assoc (
+  item_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Item ID#',
+  album_id INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Album ID#',
+
+  PRIMARY KEY (item_id, album_id),
+  KEY (item_id),
+  KEY (album_id)
+) COMMENT 'Market goods to albums associations';

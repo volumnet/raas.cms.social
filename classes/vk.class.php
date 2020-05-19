@@ -10,7 +10,7 @@ use SOME\HTTP;
 use SOME\Text;
 use \CURLFile;
 
-class Vk extends Network
+class Vk extends Network implements Marketable
 {
     public function uploadImage(Attachment $attachment, Task $task)
     {
@@ -196,6 +196,32 @@ class Vk extends Network
     }
 
 
+    public function getMarketCategories()
+    {
+        try {
+            $connection = self::getConnection($this->profile->access_token);
+            $response = $connection->api('market.getCategories', array('count' => 1000));
+            if (!$response['response']) {
+                throw new Exception('ERROR_GETTING_CATEGORIES');
+            }
+            $response = $response['response'];
+            $cats = array();
+            foreach ($response['items'] as $row) {
+                if (!$cats[$row['section']['id']]) {
+                    $cats[$row['section']['id']] = array(
+                        'id' => $row['section']['id'],
+                        'name' => $row['section']['name'],
+                        'children' => array()
+                    );
+                }
+                $cats[$row['section']['id']]['children'][] = array('id' => $row['id'], 'name' => $row['name']);
+            }
+            return $cats;
+        } catch (VKException $e) {
+        }
+    }
+
+
     public static function auth(array $IN = array())
     {
         try {
@@ -259,14 +285,27 @@ class Vk extends Network
     }
 
 
+    public function uploadMarketImage(Attachment $attachment, MarketTask $task)
+    {
+        // @todo
+        return array('id' => 0, 'url' => '#attachment=' . $attachment->id . ';task=' . $task->id);
+    }
+
+
+    public function uploadMarketAlbum(MarketTask $task, $name, MarketAlbum $album = null)
+    {
+        // @todo
+        return array('id' => 0, 'url' => '#task=' . $task->id . ';album=' . $album->id, 'name' => $name);
+    }
+
+
     public static function getLoginUrl($callback)
     {
         try {
             $connection = self::getConnection();
-            $url = $connection->getAuthorizeURL('photos,wall,groups,offline,docs', $callback);
+            $url = $connection->getAuthorizeURL('photos,wall,groups,offline,docs,market', $callback);
             return $url;
         } catch (VKException $e) {
-            // throw new Exception('ERROR_FACEBOOK_INVALID_SETTINGS');
         }
     }
 

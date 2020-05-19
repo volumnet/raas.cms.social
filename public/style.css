@@ -49,3 +49,13 @@
     box-shadow: none;
     border-radius: 0;
 }
+.jsTreePlus, .jsTreeMinus { 
+    display: inline-block;
+    vertical-align: middle;
+    height: 16px; 
+    width: 16px; 
+    background: url('../../../../system/public/img/bullet_toggle_plus.png') 0 0 no-repeat; 
+}
+.jsTreeMinus { 
+    background-image: url('../../../../system/public/img/bullet_toggle_minus.png'); 
+}

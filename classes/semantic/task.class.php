@@ -12,6 +12,9 @@ use SOME\Text;
 class Task extends SOME
 {
     protected static $tablename = 'cms_social_tasks';
+    protected static $uploadImageFunction = 'uploadImage';
+    protected static $uploadTextFunction = 'uploadText';
+
     protected static $defaultOrderBy = "id";
     protected static $references = array(
         'materialType' => array('classname' => 'RAAS\\CMS\\Material_Type', 'FK' => 'material_type_id', 'cascade' => true),
@@ -26,6 +29,39 @@ class Task extends SOME
         'documents' => array('classname' => 'RAAS\\CMS\\Social\\Document', 'FK' => 'pid'),
     );
     protected static $cognizableVars = array('name');
+
+    public static function spawn($import_data)
+    {
+        if (is_array($import_data)) {
+            if ($import_data['is_market']) {
+                return new MarketTask($import_data);
+            }
+        } else {
+            $SQL_query = "SELECT is_market FROM " . self::_tablename() . " WHERE id = ?";
+            if ($isMarket = self::$SQL->getvalue(array($SQL_query, array($import_data)))) {
+                return new MarketTask($import_data);
+            }
+        }
+        return new static($import_data);
+    }
+
+
+    public function commit()
+    {
+        parent::commit();
+        if (static::$tablename2 && ($arr = $this->getAddData())) {
+            self::$SQL->query("DELETE FROM " . static::$tablename2 . " WHERE id = " . (int)$this->id);
+            self::$SQL->add(static::$tablename2, $arr);
+        }
+        $this->reload();
+    }
+
+
+    protected function getAddData()
+    {
+
+    }
+
 
     public function _name()
     {
@@ -73,7 +109,7 @@ class Task extends SOME
     }
 
 
-    private function getImagesUploads(Material $item, Post $post = null)
+    protected function getImagesUploads(Material $item, Post $post = null)
     {
         $imagesUploads = array();
         $oldUploads = array();
@@ -94,7 +130,7 @@ class Task extends SOME
                     if ($oldUploads[$materialImage->id]) {
                         // string чтобы сохранить порядок
                         $imagesUploads[(string)$materialImage->id] = $oldUploads[$materialImage->id];
-                    } elseif ($uploadData = $this->profile->network->uploadImage($materialImage, $this)) {
+                    } elseif ($uploadData = $this->profile->network->{static::$uploadImageFunction}($materialImage, $this)) {
                         $upload = new Upload(array(
                             'iid' => trim($uploadData['id']),
                             'url' => trim($uploadData['url']),
@@ -122,7 +158,7 @@ class Task extends SOME
     }
 
 
-    private function getDocumentUploads(Material $item, Post $post = null)
+    protected function getDocumentUploads(Material $item, Post $post = null)
     {
         $documentUploads = array();
         $oldUploads = array();
@@ -175,7 +211,7 @@ class Task extends SOME
     {
         $text = $this->getText($item);
         try {
-            $postData = $this->profile->network->uploadText($this, $text, $imagesUploads, $documentUploads, $post);
+            $postData = $this->profile->network->{static::$uploadTextFunction}($this, $text, $imagesUploads, $documentUploads, $post);
         } catch (Exception $e) {
         }
         if ($postData) {
@@ -205,7 +241,7 @@ class Task extends SOME
     }
 
 
-    private function getText(Material $item)
+    protected function getText(Material $item)
     {
         $m = new Mustache_Engine();
         $data = array(
