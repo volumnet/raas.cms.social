@@ -43,7 +43,7 @@ class Post extends SOME
     }
 
 
-    public static function delete(self $item)
+    public static function delete(SOME $item)
     {
         foreach ($item->uploads as $upload) {
             Upload::delete($upload);

@@ -22,7 +22,7 @@ class MarketAlbum extends Post
     }
 
 
-    public static function delete(self $item)
+    public static function delete(SOME $item)
     {
         try {
             $result = $item->task->profile->network->deleteMarketAlbum($item);
