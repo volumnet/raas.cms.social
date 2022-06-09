@@ -1,7 +1,7 @@
 {
     "name": "volumnet/raas.cms.social",
     "description": "RAAS.CMS.Social",
-    "version": "4.2.2",
+    "version": "4.2.3",
     "license": "GPL-3.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -18,8 +18,7 @@
         "ext-PDO": ">=0",
         "ext-mbstring": ">=0",
         "mustache/mustache": ">=2.5",
-        "volumnet/some4": "^4.5.3",
-        "volumnet/raas.cms": "^4.2.52",
+        "volumnet/raas.cms": ">=4.2.52",
         "abraham/twitteroauth": "*",
         "facebook/graph-sdk": "*",
         "vladkens/vk": "*"
